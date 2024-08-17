@@ -1,8 +1,17 @@
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from .celery_task.celery_ import celery_init_app
 
 app = Flask(__name__)
+app.config.from_mapping(
+    CELERY={
+        "broker_url": "redis://localhost",
+        "result_backend": "redis://localhost",
+        "task_ignore_result": True,
+    }
+)
+celery_app = celery_init_app(app)
 basedir = os.path.abspath(os.path.dirname(__file__))
 instance_path = os.path.join(basedir, 'instance')
 
