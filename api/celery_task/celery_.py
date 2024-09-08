@@ -12,3 +12,6 @@ def celery_init_app(app: Flask) -> Celery:
     celery_app.set_default()
     app.extensions["celery"] = celery_app
     return celery_app
+
+
+# celery -A api.celery_app worker --pool=solo -l info
