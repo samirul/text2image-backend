@@ -5,6 +5,7 @@ from io import BytesIO
 from celery import shared_task
 from diffusers import StableDiffusionPipeline
 from api import text2image
+from api.producers import publish
 
 class Text2Image:
     def __init__(self, text):
@@ -19,7 +20,10 @@ class Text2Image:
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         img = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        text2image.insert_one({'image_name': str(self.text), "image_data": img})
+        data = text2image.insert_one({'image_name': str(self.text), "image_data": img})
+        inserted_id = data.inserted_id
+        data_inserted = text2image.find_one({"_id": inserted_id})
+        publish(method="created_new_image", body=data_inserted)
         path = os.path.join('images', f"result_txt_2_img_{'_'.join(text)}.png")
         return image.save(path)
         
