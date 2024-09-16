@@ -1,3 +1,4 @@
+import os
 import ssl
 import pika
 import json
@@ -7,7 +8,7 @@ from pika.exceptions import ConnectionClosedByBroker, AMQPConnectionError
 
 # RabbitMQ connection parameters/URLS
 def connection_rabbitMq():
-    params = pika.URLParameters("amqps://ylsfopur:uuwLDnP5CRQOXjeQiMGkQb_GXA01SB2C@armadillo.rmq.cloudamqp.com/ylsfopur") 
+    params = pika.URLParameters(os.environ.get('RABBITMQ_URL')) 
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     return channel
