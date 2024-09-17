@@ -2,9 +2,11 @@ from api import app, text2image
 from flask import request, jsonify
 from bson.objectid import ObjectId
 from api import tasks
+from jwt_token.jwt_token_verify import jwt_login_required
 
 
 @app.route("/generate-image", methods=['POST'])
+@jwt_login_required
 def post_generate_image():
     try:
         text_inputed = request.json.get("text")
@@ -16,6 +18,7 @@ def post_generate_image():
 
 
 @app.route("/all-images", methods=['GET'])
+@jwt_login_required
 def get_generated_images():
     try:
         data = []
@@ -38,6 +41,7 @@ def get_generated_images():
 
 
 @app.route("/image/<id>/", methods=['GET'])
+@jwt_login_required
 def get_single_generated_images(id):
     try:
         data = []
@@ -57,6 +61,7 @@ def get_single_generated_images(id):
 
 
 @app.route("/image/delete/<id>/", methods=['POST'])
+@jwt_login_required
 def delete_single_generated_images(id):
     try:
         if text2image.find_one({'_id': ObjectId(str(id))}) is None:

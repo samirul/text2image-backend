@@ -23,7 +23,7 @@ def jwt_login_required(func):
         # Checking for if header and header token type Bearer avalible or not
         if not header or not header.startswith('Bearer '):
             return jsonify({'error': 'Authorization header is missing or invalid'}), 401
-        token = header.split('')[1]
+        token = header.split(' ')[1]
         try:
             # Decode jwt token by using secret key
             payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
