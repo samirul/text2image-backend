@@ -1,6 +1,9 @@
 from flask import Flask
 from .celery_task.celery_ import celery_init_app
 from pymongo import MongoClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.config.from_mapping(
@@ -18,6 +21,7 @@ client = MongoClient('localhost', 27017)
 db = client.text2image_flask_database
 # text2image collection
 text2image = db.text2image
+user = db.user
 
 
 from api import routes
