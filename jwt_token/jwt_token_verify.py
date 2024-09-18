@@ -32,6 +32,8 @@ def jwt_login_required(func):
         except jwt.InvalidTokenError:
             return jsonify({'error': 'Invalid token'}), 401
         
-        return func(payload, *args, **kwargs) # return valid payload
+        kwargs['payload'] = payload
+        
+        return func(*args, **kwargs) # return valid payload
     return jwt_check_token
     
