@@ -39,9 +39,10 @@ def connect_consumer():
                     try:
                         ids = json.loads(body)
                         if text2image.find_one({'_id': ObjectId(str(ids))}) is None:
-                            print(f"Images {ids} is not found.")
-                        text2image.delete_one({'_id': ObjectId(str(ids))})
-                        print("Image deleted successfully")
+                            print(f"Images {ids} is not found or successfully deleted from admin panel.")
+                        else:
+                            text2image.delete_one({'_id': ObjectId(str(ids))})
+                            print("Image deleted successfully")
                     except Exception as e:
                         print(f"Something is wrong: {e}")
 

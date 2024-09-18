@@ -3,6 +3,7 @@ from flask import request, jsonify
 from bson.objectid import ObjectId
 from api import tasks
 from jwt_token.jwt_token_verify import jwt_login_required
+from api.producers import publish
 
 
 @app.route("/generate-image", methods=['POST'])
@@ -67,6 +68,7 @@ def delete_single_generated_images(ids, payload):
         if text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': payload['user_id']}) is None:
             return jsonify({"msg": f"Data {ids} is not found."}),404
         text2image.delete_one({'_id': ObjectId(str(ids))})
+        publish("image_data_Delete_from_flask", ids)
         return jsonify({}),204
     except Exception as e:
         print(e)
