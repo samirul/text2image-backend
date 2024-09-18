@@ -7,7 +7,8 @@ import json
 import os
 import pika
 from pika.exceptions import AMQPConnectionError
-from api import user
+from bson import ObjectId
+from api import user, text2image
 
 # RabbitMQ connection parameters
 params = pika.URLParameters(os.environ.get('RABBITMQ_URL'))
@@ -32,6 +33,18 @@ def connect_consumer():
                     data = json.loads(body)
                     user.insert_one({'_id': data['id'], 'username': data['username'], 'email': data['email']})
                     print("User inserted successfully")
+
+                if properties.type == 'delete_images_from_database':
+                    print("Task executing, please wait....")
+                    try:
+                        ids = json.loads(body)
+                        if text2image.find_one({'_id': ObjectId(str(ids))}) is None:
+                            print(f"Images {ids} is not found.")
+                        text2image.delete_one({'_id': ObjectId(str(ids))})
+                        print("Image deleted successfully")
+                    except Exception as e:
+                        print(f"Something is wrong: {e}")
+
             
             except Exception as e:
                 # Log or handle errors during message processing
