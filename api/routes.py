@@ -61,7 +61,7 @@ def get_single_generated_images(ids, payload):
         return jsonify({"msg": "Something is wrong or bad request."}),400
 
 
-@app.route("/image/delete/<ids>/", methods=['POST'])
+@app.route("/image/delete/<ids>/", methods=['DELETE'])
 @jwt_login_required
 def delete_single_generated_images(ids, payload):
     try:
