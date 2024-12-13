@@ -16,7 +16,7 @@ app.config.from_mapping(
 celery_app = celery_init_app(app)
 app.config['SECRET_KEY'] = '605e4f092eb4936a59989f99'
 
-client = MongoClient('localhost', 27017)
+client = MongoClient('localhost', 27017, uuidRepresentation="standard")
 # MongoDB database
 db = client.text2image_flask_database
 # text2image collection

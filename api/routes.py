@@ -1,4 +1,5 @@
 import json
+import uuid
 from collections import OrderedDict
 from flask import request, jsonify, Response
 from bson.objectid import ObjectId
@@ -29,7 +30,7 @@ def post_generate_image(payload):
 def get_generated_images(payload):
     try:
         data = []
-        images = text2image.find({"user_id": payload['user_id']})
+        images = text2image.find({"user_id": uuid.UUID(payload['user_id'])})
         if text2image.count_documents({}) == 0:
             response_data = json.dumps({"msg": "Data is not found."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
@@ -53,7 +54,7 @@ def get_generated_images(payload):
 def get_single_generated_images(ids, payload):
     try:
         data = []
-        image = text2image.find_one({'_id': ObjectId(str(ids)), "user_id": payload['user_id']})
+        image = text2image.find_one({'_id': ObjectId(str(ids)), "user_id": uuid.UUID(payload['user_id'])})
         if image is None:
             response_data = json.dumps({"msg": f"Data {ids} is not found."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
@@ -75,7 +76,7 @@ def get_single_generated_images(ids, payload):
 @jwt_login_required
 def delete_single_generated_images(ids, payload):
     try:
-        if text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': payload['user_id']}) is None:
+        if text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': uuid.UUID(payload['user_id'])}) is None:
             response_data = json.dumps({"msg": f"Data {ids} is not found."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
         text2image.delete_one({'_id': ObjectId(str(ids))})
