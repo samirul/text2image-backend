@@ -9,7 +9,7 @@ from api.producers import publish
 
 class Text2Image:
     def __init__(self, text, payload):
-        self.model = "runwayml/stable-diffusion-v1-5"
+        self.model = "sd-legacy/stable-diffusion-v1-5"
         self.pipe = StableDiffusionPipeline.from_pretrained(self.model, torch_dtype=torch.float16)
         self.trained_on = self.pipe.to("cuda")
         self.text = text
@@ -39,5 +39,10 @@ class Text2Image:
         
 @shared_task(ignore_result=False)
 def task_generate(text, payload):
-    txt2img = Text2Image(text=text, payload=payload)
-    return txt2img.generate()
+    try:
+        txt2img = Text2Image(text=text, payload=payload)
+        txt2img.generate()
+        return "Done"
+    except Exception as e:
+        print(f"Something is Wrong ->: {e}")
+        return e
