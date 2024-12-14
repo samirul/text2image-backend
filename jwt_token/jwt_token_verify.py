@@ -1,7 +1,7 @@
-'''
+"""
     Function for checking jwt access token so user who logged in can access information
 
-'''
+"""
 
 import os
 from functools import wraps
@@ -11,11 +11,17 @@ from flask import jsonify, request
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 def jwt_login_required(func):
-    '''
-        For getting jwt access token from other apps so we can
-        check if user has logged or has permission to access app or not
-        if jwt access token avalible then yes user has access until access token expire
-    '''
+    """custom function for getting jwt access token from other apps so we can
+       check if the user has logged on has permission to access app or not
+       if jwt access token avalible then yes and the user has access until
+       access token expire.
+
+    Args:
+        func (args, kwags): getting access_tokens with bearer from django youtools.
+
+    Returns:
+        args, kwargs: decorator returns args and kwags with payload for authentication
+    """
     @wraps(func)
     def jwt_check_token(*args, **kwargs):
         # Get the Authrization header

@@ -9,7 +9,7 @@ from api import app, text2image
 from api.producers import publish
 
 
-@app.route("/generate-image", methods=['POST'])
+@app.route("/generate-image/", methods=['POST'])
 @jwt_login_required
 def post_generate_image(payload):
     try:
@@ -18,14 +18,14 @@ def post_generate_image(payload):
             response_data = json.dumps({"msg": "No text is found, add a text."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
         result = tasks.task_generate.delay(text=text_inputed,payload=payload)
-        return jsonify({"msg":"success","result_id": result.id, "result_status": result.status}),200
+        return jsonify({"msg":"Success", "result_id": result.id, "result_status": result.status}),200
     except Exception as e:
         print(e)
         response_data = json.dumps({"msg": "Something is wrong or bad request"}, indent=4)
         return Response(response_data, status=400, mimetype='application/json')
 
 
-@app.route("/all-images", methods=['GET'])
+@app.route("/all-images/", methods=['GET'])
 @jwt_login_required
 def get_generated_images(payload):
     try:
@@ -39,6 +39,7 @@ def get_generated_images(payload):
                 ("id", str(image['_id'])),
                 ("image_data", str(image['image_data'])),
                 ("image_name", str(image['image_name'])),
+                ("user_id", str(image['user_id'])),
             ]) 
             data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
@@ -62,6 +63,7 @@ def get_single_generated_images(ids, payload):
             ("id", str(image['_id'])),
             ("image_data", str(image['image_data'])),
             ("image_name", str(image['image_name'])),
+            ("user_id", str(image['user_id'])),
             ])
         data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
