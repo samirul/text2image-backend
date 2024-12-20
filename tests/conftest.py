@@ -1,9 +1,16 @@
+import os
 import uuid
 import json
+from datetime import datetime, timedelta
+import jwt
 import pytest
-from bson.objectid import ObjectId
-from api import app, user, cache, celery_app,text2image
+from dotenv import load_dotenv
+from api import app, user, celery_app, text2image
 from .random_object_id_generate.generate_id import random_object_id
+
+load_dotenv()
+
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 @pytest.fixture
 def client():
@@ -17,19 +24,24 @@ def celery_app_test():
 
 @pytest.fixture
 def get_access_token():
-    access_token = cache.get("test_user_key")
-    token = access_token.decode().replace("'", '"')
-    if token:
-        return token
-    return
+    access_token = jwt.encode({
+        'user_id': str(uuid.uuid4()),
+        'exp': datetime.utcnow() + timedelta(minutes=25)
+    }, app.config['SECRET_KEY'], algorithm='HS256')
+    return access_token
 
 @pytest.fixture
 def get_user_info(get_access_token):
-    user_info = cache.get("test_user_info")
-    info = user_info.decode().replace("'", '"')
-    if info:
-        return info
-    return
+    try:
+        # Decode jwt token by using secret key
+        access_token = get_access_token
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=['HS256'])
+        user_info = {"pk": payload['user_id'], 'email': 'cat1@cat.com'}
+        return json.dumps(user_info)
+    except jwt.ExpiredSignatureError:
+        return f"token expired {401}"
+    except jwt.InvalidTokenError:
+        return f"token expired {401}"
 
 @pytest.fixture
 def set_user_info(get_user_info):
@@ -54,8 +66,8 @@ def create_generated_image_manually(set_user_info):
         "user_id": user_["_id"]
     }
     image_ids = []
-    check_data_already_in = text2image.find_one({"category_name": custom_data.get("category_name"),
-                                                  "user": custom_data.get("user")
+    check_data_already_in = text2image.find_one({"image_name": custom_data.get("image-xyz"),
+                                                  "user": custom_data.get("user_id")
                                                    })
     if not check_data_already_in:
         image_id = text2image.insert_one(custom_data)
