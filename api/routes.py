@@ -8,8 +8,7 @@ from collections import OrderedDict
 from flask import request, jsonify, Response
 from bson.objectid import ObjectId
 from jwt_token.jwt_token_verify import jwt_login_required
-from api import tasks
-from api import app, text2image
+from api import app, text2image, tasks, cache
 from api.producers import publish
 
 
@@ -54,6 +53,13 @@ def get_generated_images(payload):
         return 401 if not authenticated, 404 if data is not found.
     """
     try:
+        # check if cached response avaliable or not
+        cached_item = cache.get(f"text2image_all_data_{payload['user_id']}")
+        if cached_item:
+            deserialized_data = json.loads(cached_item)
+            response_data = json.dumps(deserialized_data, indent=4)
+            return Response(response_data, status=200, mimetype='application/json')
+        
         data = []
         images = text2image.find({"user_id": uuid.UUID(payload['user_id'])})
         if text2image.count_documents({}) == 0:
@@ -68,6 +74,7 @@ def get_generated_images(payload):
             ]) 
             data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
+        cache.set(f"text2image_all_data_{payload['user_id']}")
         return Response(response_data, status=200, mimetype='application/json')
     except Exception as e:
         print(e)
@@ -90,6 +97,13 @@ def get_single_generated_images(ids, payload):
         return 401 if not authenticated, 404 if data is not found.
     """
     try:
+        # check if cached response avaliable or not
+        cached_item = cache.get(f"text2image_all_data_{payload['user_id']}_{ids}")
+        if cached_item:
+            deserialized_data = json.loads(cached_item)
+            response_data = json.dumps(deserialized_data, indent=4)
+            return Response(response_data, status=200, mimetype='application/json')
+        
         data = []
         image = text2image.find_one({'_id': ObjectId(str(ids)), "user_id": uuid.UUID(payload['user_id'])})
         if image is None:
@@ -103,6 +117,7 @@ def get_single_generated_images(ids, payload):
             ])
         data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
+        cache.set(f"text2image_all_data_{payload['user_id']}_{ids}")
         return Response(response_data, status=200, mimetype='application/json')
     except Exception as e:
         print(e)
@@ -129,6 +144,7 @@ def delete_single_generated_images(ids, payload):
             response_data = json.dumps({"msg": f"Data {ids} is not found."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
         text2image.delete_one({'_id': ObjectId(str(ids))})
+        cache.delete(f"text2image_all_data_{payload['user_id']}_{ids}")
         publish("image_data_Delete_from_flask", ids)
         return Response({}, status=204, mimetype='application/json')
     except Exception as e:

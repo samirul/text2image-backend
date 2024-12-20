@@ -11,7 +11,7 @@ from io import BytesIO
 import torch
 from celery import shared_task
 from diffusers import StableDiffusionPipeline
-from api import text2image
+from api import text2image, cache
 from api.producers import publish
 
 class Text2Image:
@@ -46,6 +46,7 @@ class Text2Image:
             image.save(buffer, format="PNG")
             img = base64.b64encode(buffer.getvalue()).decode('utf-8')
             data = text2image.insert_one({'image_name': str(self.text), "image_data": img, "user_id": uuid.UUID(self.payload['user_id'])})
+            cache.delete(f"text2image_all_data_{self.payload['user_id']}")
             inserted_id = data.inserted_id
             data_inserted = text2image.find_one({"_id": inserted_id})
             path = os.path.join('images', f"result_txt_2_img_{'_'.join(text)}.png")
