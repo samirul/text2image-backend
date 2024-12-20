@@ -74,7 +74,7 @@ def get_generated_images(payload):
             ]) 
             data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
-        cache.set(f"text2image_all_data_{payload['user_id']}")
+        cache.set(f"text2image_all_data_{payload['user_id']}", response_data)
         return Response(response_data, status=200, mimetype='application/json')
     except Exception as e:
         print(e)
@@ -117,7 +117,7 @@ def get_single_generated_images(ids, payload):
             ])
         data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
-        cache.set(f"text2image_all_data_{payload['user_id']}_{ids}")
+        cache.set(f"text2image_all_data_{payload['user_id']}_{ids}", response_data)
         return Response(response_data, status=200, mimetype='application/json')
     except Exception as e:
         print(e)
