@@ -1,3 +1,7 @@
+""" 
+    Here route act as endpoint for link
+    and for writing certain logics.
+"""
 import json
 import uuid
 from collections import OrderedDict
@@ -12,6 +16,17 @@ from api.producers import publish
 @app.route("/generate-image/", methods=['POST'])
 @jwt_login_required
 def post_generate_image(payload):
+    """Responsible for executing celery task text to image generation. 
+
+    Args:
+         payload (UUID): Get user_id from payload after authentication.
+
+    Returns:
+        Response: This function execute celery taks and provide
+        task ID and response type - [POST] and status code - 200 OK
+        with json format else return status code - 400 bad request,
+        return 401 if not authenticated, 404 if data is not found.
+    """
     try:
         text_inputed = request.json.get("text")
         if not text_inputed:
@@ -28,6 +43,16 @@ def post_generate_image(payload):
 @app.route("/all-images/", methods=['GET'])
 @jwt_login_required
 def get_generated_images(payload):
+    """Getting list of all images from MongoDB database
+
+    Args:
+        payload (UUID): Get user_id from payload after authentication.
+
+    Returns:
+        Return: returns list of all images with status code - (200 OK),
+        else return bad request status code - (400 Bad request),
+        return 401 if not authenticated, 404 if data is not found.
+    """
     try:
         data = []
         images = text2image.find({"user_id": uuid.UUID(payload['user_id'])})
@@ -53,6 +78,17 @@ def get_generated_images(payload):
 @app.route("/image/<ids>/", methods=['GET'])
 @jwt_login_required
 def get_single_generated_images(ids, payload):
+    """Getting single image from MongoDB database by image id
+
+    Args:
+        ids (Object_id): Getting image id
+        payload (UUID): Get user_id from payload after authentication.
+
+    Returns:
+        Return: returns single image with status code - (200 OK),
+        else return bad request status code - (400 Bad request),
+        return 401 if not authenticated, 404 if data is not found.
+    """
     try:
         data = []
         image = text2image.find_one({'_id': ObjectId(str(ids)), "user_id": uuid.UUID(payload['user_id'])})
@@ -77,6 +113,17 @@ def get_single_generated_images(ids, payload):
 @app.route("/image/delete/<ids>/", methods=['DELETE'])
 @jwt_login_required
 def delete_single_generated_images(ids, payload):
+    """Delete single generated image by image id
+
+    Args:
+        ids (Object_id): Getting image id
+        payload (UUID): Get user_id from payload after authentication.
+
+    Returns:
+        Return: Return (204 deleted) after deleted image, 404 if data is not found.
+        return 401 if authenticated.
+
+    """
     try:
         if text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': uuid.UUID(payload['user_id'])}) is None:
             response_data = json.dumps({"msg": f"Data {ids} is not found."}, indent=4)

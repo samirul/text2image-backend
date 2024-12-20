@@ -1,5 +1,5 @@
 """
-    Function for checking jwt access token so user who logged in can access information
+    Function for checking jwt access token so user who logged in can access information.
 
 """
 
@@ -20,7 +20,7 @@ def jwt_login_required(func):
         func (args, kwags): getting access_tokens with bearer from django youtools.
 
     Returns:
-        args, kwargs: decorator returns args and kwags with payload for authentication
+        args, kwargs: decorator returns args and kwags with payload for authentication.
     """
     @wraps(func)
     def jwt_check_token(*args, **kwargs):

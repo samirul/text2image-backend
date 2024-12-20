@@ -1,6 +1,6 @@
-'''
+"""
     For sending messages to consumers of other apps using RabbitMQ
-'''
+"""
 
 import os
 import ssl
@@ -12,19 +12,24 @@ from pika.exceptions import ConnectionClosedByBroker, AMQPConnectionError
 
 # RabbitMQ connection parameters/URLS
 def connect():
-    '''
-        For Connecting to RabbitMQ server and channel
-    '''
+    """For Connecting to RabbitMQ server and channel
+
+    Returns:
+        return: channel for make connections.
+    """
     params = pika.URLParameters(os.environ.get('RABBITMQ_URL')) 
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     return channel
 
 def publish(method, body):
-    '''
-        Once connected to RabbitMq server then send the messages to consumers
+    """Once connected to RabbitMq server then send the messages to consumers
         for saving generated images information to other app
-    '''
+
+    Args:
+        method (string): Send custom string for identifying data by consumer.
+        body (_type_): Sending json type body data to consumer.
+    """
     channel = connect()
     # Convert ObjectId to string if found in the dictionary
     if isinstance(body, dict):
