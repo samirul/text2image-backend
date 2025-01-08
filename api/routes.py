@@ -31,7 +31,7 @@ def post_generate_image(payload):
         if not text_inputed:
             response_data = json.dumps({"msg": "No text is found, add a text."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
-        result = tasks.task_generate.delay(text=text_inputed,payload=payload)
+        result = tasks.generate.delay(text=text_inputed,payload=payload)
         return jsonify({"msg":"Success", "result_id": result.id, "result_status": result.status}),200
     except Exception as e:
         print(e)
@@ -70,6 +70,7 @@ def get_generated_images(payload):
                 ("id", str(image['_id'])),
                 ("image_data", str(image['image_data'])),
                 ("image_name", str(image['image_name'])),
+                ("mime_type", str(image['mime_type'])),
                 ("user_id", str(image['user_id'])),
             ]) 
             data.append(dict_items)
@@ -113,6 +114,7 @@ def get_single_generated_images(ids, payload):
             ("id", str(image['_id'])),
             ("image_data", str(image['image_data'])),
             ("image_name", str(image['image_name'])),
+            ("mime_type", str(image['mime_type'])),
             ("user_id", str(image['user_id'])),
             ])
         data.append(dict_items)
@@ -151,3 +153,49 @@ def delete_single_generated_images(ids, payload):
         print(e)
         response_data = json.dumps({"msg": "Something is wrong or bad request"}, indent=4)
         return Response(response_data, status=400, mimetype='application/json')
+    
+    
+@app.route("/task_status/<task_id>/", methods=['GET'])
+@jwt_login_required
+def task_status(payload, task_id):
+    task = tasks.generate.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'progress': 0,
+            'details': 'Task is waiting to start.'
+        }
+    elif task.state == 'RUNNING':
+        info = task.info or {}
+        current = info.get('current', 0)
+        total = info.get('total', 1)
+        progress = (current / total) * 100 if total > 0 else 0
+        response = {
+            'state': task.state,
+            'progress': round(progress),
+            'details': info,
+        }
+    elif task.state == 'SUCCESS':
+        response = {
+            'state': task.state,
+            'progress': 100,
+            'details': task.info,
+        }
+    elif task.state == 'FAILURE':
+        response = {
+            'state': task.state,
+            'progress': 0,
+            'error': str(task.info),
+        }
+    else:
+        response = {
+            'state': task.state,
+            'progress': 0,
+            'details': 'Task is in an unexpected state.',
+        }
+    return jsonify(response)
+
+    
+@app.route("/health", methods=['GET'])
+def health():
+    return jsonify("Running")

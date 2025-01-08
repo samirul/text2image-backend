@@ -1,5 +1,5 @@
 from api import user, text2image
-from api.tasks import Text2Image, task_generate
+from api.tasks import generate
 
 
 def test_generate_image(client, get_access_token, set_user_info, celery_app_test):
@@ -14,6 +14,8 @@ def test_generate_image(client, get_access_token, set_user_info, celery_app_test
     
     # Sending POST request
     response = client.post('/generate-image/', headers=headers, json={"text": "horse smiling"})
+
+    print(response)
 
      # Assert response
     assert 'msg' in response.json
@@ -71,45 +73,33 @@ def test_celery_task_running(set_user_info):
     user_id = set_user_info
     text = "horse smiling"
     payload = {"user_id": str(user_id["_id"])}
-    assert task_generate.delay(text=text, payload=payload).get() == "Done"
+    assert str(generate.delay(text=text, payload=payload).get()) == "{'current': 100, 'total': 100, 'status': 'Task completed!'}"
     text2image.delete_many({"user_id": user_id['_id']})
     user.delete_one({"username": "cat1", "email": "cat1@cat.com"})
 
 
-def test_task_class_if_passed(set_user_info):
-    user_id = set_user_info
-    text = "horse smiling"
-    payload = {"user_id": str(user_id["_id"])}
-    process = Text2Image(text=text, payload=payload)
-    assert process.generate() == "Done"
-    text2image.delete_many({"user_id": user_id['_id']})
-    user.delete_one({"username": "cat1", "email": "cat1@cat.com"})
 
-
-def test_task_class_if_failed_wrong_type_id(set_user_info):
+def test_celery_if_failed_wrong_type_id(set_user_info):
     user_id = set_user_info
     text = "horse smiling"
     payload = {"user_id": int(user_id["_id"])}
-    process = Text2Image(text=text, payload=payload)
-    assert str(process.generate()) == "'int' object has no attribute 'replace'"
+    assert str(generate.delay(text=text, payload=payload).get()) == "'int' object has no attribute 'replace'"
     user.delete_one({"username": "cat1", "email": "cat1@cat.com"})
 
 
-def test_task_if_no_text_being_send(set_user_info):
+def test_celery_if_no_text_being_send(set_user_info):
     user_id = set_user_info
     text = ""
     payload = {"user_id": int(user_id["_id"])}
-    process = Text2Image(text=text, payload=payload)
-    assert str(process.generate()) == "No text is found."
+    assert str(generate.delay(text=text, payload=payload).get()) == "No text is found."
     user.delete_one({"username": "cat1", "email": "cat1@cat.com"})
 
 
-def test_task_if_no_payload_being_send(set_user_info):
+def test_celery_if_no_payload_being_send(set_user_info):
     user_id = set_user_info
     text = "horse smiling"
     payload = {}
-    process = Text2Image(text=text, payload=payload)
-    assert str(process.generate()) == "User is not logged in, not user information has been found."
+    assert str(generate.delay(text=text, payload=payload).get()) == "User is not logged in, not user information has been found."
     user.delete_one({"username": "cat1", "email": "cat1@cat.com"})
 
 
