@@ -8,8 +8,7 @@ from collections import OrderedDict
 from flask import request, jsonify, Response
 from bson.objectid import ObjectId
 from jwt_token.jwt_token_verify import jwt_login_required
-from api import tasks
-from api import app, text2image
+from api import app, text2image, tasks, cache
 from api.producers import publish
 
 
@@ -32,7 +31,7 @@ def post_generate_image(payload):
         if not text_inputed:
             response_data = json.dumps({"msg": "No text is found, add a text."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
-        result = tasks.task_generate.delay(text=text_inputed,payload=payload)
+        result = tasks.generate.delay(text=text_inputed,payload=payload)
         return jsonify({"msg":"Success", "result_id": result.id, "result_status": result.status}),200
     except Exception as e:
         print(e)
@@ -54,6 +53,13 @@ def get_generated_images(payload):
         return 401 if not authenticated, 404 if data is not found.
     """
     try:
+        # check if cached response avaliable or not
+        cached_item = cache.get(f"text2image_all_data_{payload['user_id']}")
+        if cached_item:
+            deserialized_data = json.loads(cached_item)
+            response_data = json.dumps(deserialized_data, indent=4)
+            return Response(response_data, status=200, mimetype='application/json')
+        
         data = []
         images = text2image.find({"user_id": uuid.UUID(payload['user_id'])})
         if text2image.count_documents({}) == 0:
@@ -64,10 +70,12 @@ def get_generated_images(payload):
                 ("id", str(image['_id'])),
                 ("image_data", str(image['image_data'])),
                 ("image_name", str(image['image_name'])),
+                ("mime_type", str(image['mime_type'])),
                 ("user_id", str(image['user_id'])),
             ]) 
             data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
+        cache.set(f"text2image_all_data_{payload['user_id']}", response_data)
         return Response(response_data, status=200, mimetype='application/json')
     except Exception as e:
         print(e)
@@ -90,6 +98,13 @@ def get_single_generated_images(ids, payload):
         return 401 if not authenticated, 404 if data is not found.
     """
     try:
+        # check if cached response avaliable or not
+        cached_item = cache.get(f"text2image_all_data_{payload['user_id']}_{ids}")
+        if cached_item:
+            deserialized_data = json.loads(cached_item)
+            response_data = json.dumps(deserialized_data, indent=4)
+            return Response(response_data, status=200, mimetype='application/json')
+        
         data = []
         image = text2image.find_one({'_id': ObjectId(str(ids)), "user_id": uuid.UUID(payload['user_id'])})
         if image is None:
@@ -99,10 +114,12 @@ def get_single_generated_images(ids, payload):
             ("id", str(image['_id'])),
             ("image_data", str(image['image_data'])),
             ("image_name", str(image['image_name'])),
+            ("mime_type", str(image['mime_type'])),
             ("user_id", str(image['user_id'])),
             ])
         data.append(dict_items)
         response_data = json.dumps({"data": data}, indent=4)
+        cache.set(f"text2image_all_data_{payload['user_id']}_{ids}", response_data)
         return Response(response_data, status=200, mimetype='application/json')
     except Exception as e:
         print(e)
@@ -129,9 +146,56 @@ def delete_single_generated_images(ids, payload):
             response_data = json.dumps({"msg": f"Data {ids} is not found."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
         text2image.delete_one({'_id': ObjectId(str(ids))})
+        cache.delete(f"text2image_all_data_{payload['user_id']}_{ids}")
         publish("image_data_Delete_from_flask", ids)
         return Response({}, status=204, mimetype='application/json')
     except Exception as e:
         print(e)
         response_data = json.dumps({"msg": "Something is wrong or bad request"}, indent=4)
         return Response(response_data, status=400, mimetype='application/json')
+    
+    
+@app.route("/task_status/<task_id>/", methods=['GET'])
+@jwt_login_required
+def task_status(payload, task_id):
+    task = tasks.generate.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'progress': 0,
+            'details': 'Task is waiting to start.'
+        }
+    elif task.state == 'RUNNING':
+        info = task.info or {}
+        current = info.get('current', 0)
+        total = info.get('total', 1)
+        progress = (current / total) * 100 if total > 0 else 0
+        response = {
+            'state': task.state,
+            'progress': round(progress),
+            'details': info,
+        }
+    elif task.state == 'SUCCESS':
+        response = {
+            'state': task.state,
+            'progress': 100,
+            'details': task.info,
+        }
+    elif task.state == 'FAILURE':
+        response = {
+            'state': task.state,
+            'progress': 0,
+            'error': str(task.info),
+        }
+    else:
+        response = {
+            'state': task.state,
+            'progress': 0,
+            'details': 'Task is in an unexpected state.',
+        }
+    return jsonify(response)
+
+    
+@app.route("/health", methods=['GET'])
+def health():
+    return jsonify("Running")

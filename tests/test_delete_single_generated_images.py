@@ -6,7 +6,7 @@ def test_delete_single_generated_image(client, get_access_token, set_user_info, 
     access_token = get_access_token
     user_id = set_user_info
     generated_image_id = create_generated_image_manually
-
+    print(access_token)
     # Define headers
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -15,7 +15,7 @@ def test_delete_single_generated_image(client, get_access_token, set_user_info, 
     
     # Sending POST request
     response = client.delete(f'/image/delete/{generated_image_id}/', headers=headers, json={})
-
+    print(response)
      # Assert response
     assert response.status_code == 204
     text2image.delete_many({"user_id": user_id['_id']})
