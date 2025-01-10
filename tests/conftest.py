@@ -63,7 +63,8 @@ def create_generated_image_manually(set_user_info):
         "_id": id_,
         "image_name": "image-xyz",
         "image_data": "74123849661A86iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAEAAElEQVR4nET92ZIc25IliK",
-        "user_id": user_["_id"]
+        'mimeType': 'image/png',
+        "user_id": user_["_id"],
     }
     image_ids = []
     check_data_already_in = text2image.find_one({"image_name": custom_data.get("image-xyz"),
