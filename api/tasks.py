@@ -44,7 +44,7 @@ def generate(self, text, payload):
         self.update_state(state='RUNNING', meta={'current': 2, 'total': 5})
         time.sleep(5)
         image = trained_on(text).images[0]
-        text = str(text).split()
+        text_splited = str(text).split()
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         img = base64.b64encode(buffer.getvalue()).decode('utf-8')
@@ -54,7 +54,7 @@ def generate(self, text, payload):
         cache.delete(f"text2image_all_data_{payload['user_id']}")
         inserted_id = data.inserted_id
         data_inserted = text2image.find_one({"_id": inserted_id})
-        path = os.path.join('images', f"result_txt_2_img_{'_'.join(text)}.png")
+        path = os.path.join('images', f"result_txt_2_img_{'_'.join(text_splited)}.png")
         self.update_state(state='RUNNING', meta={'current': 4, 'total': 5})
         time.sleep(5)
         image.save(path)

@@ -21,9 +21,11 @@ def test_get_single_generated_image(client, get_access_token, set_user_info, cre
     assert 'id' in parsed_data['data'][0]
     assert 'image_data' in parsed_data['data'][0]
     assert 'image_name' in parsed_data['data'][0]
+    assert 'mime_type' in parsed_data['data'][0]
     assert 'user_id' in parsed_data['data'][0]
     assert parsed_data['data'][0]['id'] == str(generated_image_id)
     assert parsed_data['data'][0]['image_name'] == 'image-xyz'
+    assert parsed_data['data'][0]['mime_type'] == 'image/png'
     assert parsed_data['data'][0]['user_id'] == str(user_id['_id'])
     assert response.status_code == 200
     text2image.delete_many({"user_id": user_id['_id']})

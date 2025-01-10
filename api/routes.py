@@ -70,7 +70,7 @@ def get_generated_images(payload):
                 ("id", str(image['_id'])),
                 ("image_data", str(image['image_data'])),
                 ("image_name", str(image['image_name'])),
-                ("mime_type", str(image['mime_type'])),
+                ("mime_type", str(image['mimeType'])),
                 ("user_id", str(image['user_id'])),
             ]) 
             data.append(dict_items)
@@ -114,7 +114,7 @@ def get_single_generated_images(ids, payload):
             ("id", str(image['_id'])),
             ("image_data", str(image['image_data'])),
             ("image_name", str(image['image_name'])),
-            ("mime_type", str(image['mime_type'])),
+            ("mime_type", str(image['mimeType'])),
             ("user_id", str(image['user_id'])),
             ])
         data.append(dict_items)
