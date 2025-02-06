@@ -147,6 +147,7 @@ def delete_single_generated_images(ids, payload):
             return Response(response_data, status=404, mimetype='application/json')
         text2image.delete_one({'_id': ObjectId(str(ids))})
         cache.delete(f"text2image_all_data_{payload['user_id']}_{ids}")
+        cache.delete(f"text2image_all_data_{payload['user_id']}")
         publish("image_data_Delete_from_flask", ids)
         return Response({}, status=204, mimetype='application/json')
     except Exception as e:

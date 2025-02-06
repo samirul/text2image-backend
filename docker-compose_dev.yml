@@ -15,6 +15,11 @@ services:
     volumes: 
       - mongo-db-data-text2image:/data/db
       - mongodb-log-text2image:/var/log/mongodb/
+    deploy:
+      resources:
+          limits:
+            cpus: "2.0"
+            memory: 500M
     networks:
       - text2image_network
     healthcheck:
@@ -38,6 +43,11 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://${MONGO_DB_USER_NAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST_NAME}:${MONGO_CUSTOM_DB_PORT}/?authSource=${MONGO_DB_AUTH_SOURCE}
       ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME}
       ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
+    deploy:
+      resources:
+          limits:
+            cpus: "1.0"
+            memory: 200M
     networks:
       - text2image_network
     depends_on:
@@ -51,6 +61,11 @@ services:
     ports:
       - $CACHE_REDIS_PORT:$CACHE_REDIS_PORT
     command: redis-server --port ${CACHE_REDIS_PORT} --requirepass $CACHE_REDIS_PASSWORD --save 20 1 --loglevel warning
+    deploy:
+      resources:
+          limits:
+            cpus: "2.0"
+            memory: 500M
     networks:
       - text2image_network
     volumes:
@@ -63,38 +78,17 @@ services:
       - $REDIS_INSIGHT_CUSTOM_PORT:$REDIS_INSIGHT_PORT
     environment:
       RI_SERVER_PORT: ${REDIS_INSIGHT_PORT}
+    deploy:
+      resources:
+          limits:
+            cpus: "1.0"
+            memory: 200M
     networks:
       - text2image_network
     restart: always
     volumes:
       - redisinsight_data_text2image:/db
 
-  celery-text2image:
-    container_name: celery-text2image
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: bash -c "source /virtual-py/bin/activate && celery -A api.celery_app worker --loglevel=info --concurrency=$(nproc)"
-    volumes:
-      - .:/text2image-app
-      - ./images:/text2image-app/images/
-    environment:
-      - CELERY_BROKER=${CELERY_BROKER}
-      - CELERY_BACKEND=${CELERY_BACKEND}
-    networks:
-      - text2image_network
-    depends_on:
-      mongoDB-text2image:
-        condition: service_healthy
-      redis-text2image:
-        condition: service_started
-      text2image-project:
-        condition: service_started
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
 
   text2image-project:
     container_name: text2image-project
@@ -125,6 +119,37 @@ services:
         condition: service_started
     deploy:
       resources:
+        limits:
+          cpus: "4.0"
+          memory: 4124M
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  celery-text2image:
+    container_name: celery-text2image
+    image: text2image-image
+    command: bash -c "source /virtual-py/bin/activate && celery -A api.celery_app worker --loglevel=info --concurrency=$(nproc)"
+    volumes:
+      - images:/vol/images/
+      - text2image-ai-model:/vol/model/
+    environment:
+      - CELERY_BROKER=${CELERY_BROKER}
+      - CELERY_BACKEND=${CELERY_BACKEND}
+    networks:
+      - text2image_network
+    depends_on:
+      mongoDB-text2image:
+        condition: service_healthy
+      redis-text2image:
+        condition: service_started
+      text2image-project:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4124M
         reservations:
           devices:
             - capabilities: [gpu]
@@ -138,6 +163,11 @@ services:
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5011 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
     networks:
       - text2image_network
     depends_on:
@@ -155,6 +185,11 @@ services:
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5012 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
     networks:
       - text2image_network
     depends_on:
@@ -172,6 +207,11 @@ services:
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5013 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
     networks:
       - text2image_network
     depends_on:
@@ -189,6 +229,11 @@ services:
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5014 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
     networks:
       - text2image_network
     depends_on:
@@ -201,6 +246,11 @@ services:
     build:
       context: ./nginx
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
     ports:
       - $NGINX_PORT:$NGINX_PORT
     networks:
@@ -215,8 +265,15 @@ volumes:
   mongodb-log-text2image:
     driver: local
     name: mongo-log-text2image
+  text2image-ai-model:
+    driver: local
+    name: text2image-ai-model
   redis-cache-data-text2image:
+    driver: local
+    name: redis-cache-data-text2image
   images:
+    driver: local
+    name: images-text2image
   redisinsight_data_text2image:
     driver: local
 
