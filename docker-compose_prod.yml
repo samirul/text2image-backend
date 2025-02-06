@@ -1,0 +1,251 @@
+services:
+  mongoDB-text2image:
+    container_name: mongoDB-text2image-container
+    image: mongo:latest
+    restart: always
+    hostname: ${MONGO_DB_HOST_NAME}
+    env_file:
+      - ".env"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_USER_NAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD}
+    command: mongod --port ${MONGO_CUSTOM_DB_PORT}
+    ports:
+      - $MONGO_CUSTOM_DB_PORT:$MONGO_CUSTOM_DB_PORT
+    volumes: 
+      - mongo-db-data-text2image:/data/db
+      - mongodb-log-text2image:/var/log/mongodb/
+    deploy:
+      resources:
+          limits:
+            cpus: "2.0"
+            memory: 500M
+    networks:
+      - text2image_network
+    healthcheck:
+      test: echo 'db.runCommand({serverStatus:1}).ok' | mongosh --host $MONGO_DB_HOST_NAME --port $MONGO_CUSTOM_DB_PORT admin -u $MONGO_DB_USER_NAME -p $MONGO_DB_PASSWORD --quiet | grep 1
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  mongoDB-express-text2image:
+    container_name: mongoDB-express-text2image
+    image: mongo-express:latest
+    restart: always
+    ports:
+      - $MONGO_DB_EXPRESS_CUSTOM_PORT:$MONGO_DB_EXPRESS_PORT
+    environment:
+      ME_CONFIG_SITE_BASEURL: "/"
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_DB_USER_NAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_DB_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_DB_USER_NAME}:${MONGO_DB_PASSWORD}@${MONGO_DB_HOST_NAME}:${MONGO_CUSTOM_DB_PORT}/?authSource=${MONGO_DB_AUTH_SOURCE}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
+    deploy:
+      resources:
+          limits:
+            cpus: "1.0"
+            memory: 200M
+    networks:
+      - text2image_network
+    depends_on:
+      mongoDB-text2image:
+        condition: service_healthy
+
+  redis-text2image:
+    container_name: redis-text2image
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - $CACHE_REDIS_PORT:$CACHE_REDIS_PORT
+    command: redis-server --port ${CACHE_REDIS_PORT} --requirepass $CACHE_REDIS_PASSWORD --save 20 1 --loglevel warning
+    deploy:
+      resources:
+          limits:
+            cpus: "2.0"
+            memory: 500M
+    networks:
+      - text2image_network
+    volumes:
+      - redis-cache-data-text2image:/data
+
+  redis-insight_text2image:
+    container_name: redis-insight_text2image
+    image: redis/redisinsight:latest
+    ports:
+      - $REDIS_INSIGHT_CUSTOM_PORT:$REDIS_INSIGHT_PORT
+    environment:
+      RI_SERVER_PORT: ${REDIS_INSIGHT_PORT}
+    deploy:
+      resources:
+          limits:
+            cpus: "1.0"
+            memory: 200M
+    networks:
+      - text2image_network
+    restart: always
+    volumes:
+      - redisinsight_data_text2image:/db
+
+    
+  consumers-text2image:
+    container_name: consumers-text2image
+    image: text2image-image
+    env_file:
+      - ".env"
+    command: bash -c "source /virtual-py/bin/activate && python3 consumers.py"
+    deploy:
+      resources:
+          limits:
+            cpus: "1.0"
+            memory: 200M
+    networks:
+      - text2image_network
+    restart: always
+
+  celery-text2image:
+    container_name: celery-text2image
+    image: text2image-image
+    command: bash -c "source /virtual-py/bin/activate && celery -A api.celery_app worker --loglevel=info --concurrency=$(nproc)"
+    volumes:
+      - images:/vol/images/
+      - text2image-ai-model:/vol/model/
+    environment:
+      - CELERY_BROKER=${CELERY_BROKER}
+      - CELERY_BACKEND=${CELERY_BACKEND}
+    networks:
+      - text2image_network
+    depends_on:
+      mongoDB-text2image:
+        condition: service_healthy
+      redis-text2image:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4124M
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  gunicorn-5011-text2image:
+    container_name: gunicorn-5011-text2image
+    image: text2image-image
+    restart: always
+    ports:
+      - 5011:5011
+    env_file:
+      - ".env"
+    command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5011 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
+    networks:
+      - text2image_network
+    depends_on:
+      mongoDB-text2image:
+        condition: service_healthy
+
+  gunicorn-5012-text2image:
+    container_name: gunicorn-5012-text2image
+    image: text2image-image
+    restart: always
+    ports:
+      - 5012:5012
+    env_file:
+      - ".env"
+    command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5012 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
+    networks:
+      - text2image_network
+    depends_on:
+      mongoDB-text2image:
+        condition: service_healthy
+
+  gunicorn-5013-text2image:
+    container_name: gunicorn-5013-text2image
+    image: text2image-image
+    restart: always
+    ports:
+      - 5013:5013
+    env_file:
+      - ".env"
+    command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5013 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
+    networks:
+      - text2image_network
+    depends_on:
+      mongoDB-text2image:
+        condition: service_healthy
+
+  gunicorn-5014-text2image:
+    container_name: gunicorn-5014-text2image
+    image: text2image-image
+    restart: always
+    ports:
+      - 5014:5014
+    env_file:
+      - ".env"
+    command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5014 run:app"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
+    networks:
+      - text2image_network
+    depends_on:
+      mongoDB-text2image:
+        condition: service_healthy
+
+  nginx-text2image:
+    build:
+        context: ./nginx
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 300M
+    ports:
+      - $NGINX_PORT:$NGINX_PORT
+    networks:
+      - text2image_network
+    depends_on:
+      - gunicorn-5014-text2image
+
+volumes:
+  mongo-db-data-text2image:
+    driver: local
+    name: mongo-data-text2image
+  mongodb-log-text2image:
+    driver: local
+    name: mongo-log-text2image
+  text2image-ai-model:
+    driver: local
+    name: text2image-ai-model
+  redis-cache-data-text2image:
+    driver: local
+    name: redis-cache-data-text2image
+  images:
+    driver: local
+    name: images-text2image
+  redisinsight_data_text2image:
+    driver: local
+
+networks:
+  text2image_network:
+    driver: bridge
