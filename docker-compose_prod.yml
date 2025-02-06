@@ -137,6 +137,8 @@ services:
     restart: always
     ports:
       - 5011:5011
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5011 run:app"
@@ -157,6 +159,8 @@ services:
     restart: always
     ports:
       - 5012:5012
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5012 run:app"
@@ -177,6 +181,8 @@ services:
     restart: always
     ports:
       - 5013:5013
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5013 run:app"
@@ -197,6 +203,8 @@ services:
     restart: always
     ports:
       - 5014:5014
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5014 run:app"

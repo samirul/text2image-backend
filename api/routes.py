@@ -10,6 +10,7 @@ from bson.objectid import ObjectId
 from jwt_token.jwt_token_verify import jwt_login_required
 from api import app, text2image, tasks, cache
 from api.producers import publish
+from delete_images.delete import delete_data_from_media_container
 
 
 @app.route("/generate-image/", methods=['POST'])
@@ -145,6 +146,10 @@ def delete_single_generated_images(ids, payload):
         if text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': uuid.UUID(payload['user_id'])}) is None:
             response_data = json.dumps({"msg": f"Data {ids} is not found."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
+        image = text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': uuid.UUID(payload['user_id'])})
+        image_name = str(image['image_name']).split()
+        image_name_joined = "_".join(image_name)
+        delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}.png")
         text2image.delete_one({'_id': ObjectId(str(ids))})
         cache.delete(f"text2image_all_data_{payload['user_id']}_{ids}")
         cache.delete(f"text2image_all_data_{payload['user_id']}")
