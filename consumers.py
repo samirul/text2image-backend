@@ -1,7 +1,7 @@
 
-'''
+"""
     Function for Saving user information in MongoDB using RabbitMq
-'''
+"""
 
 import json
 import os
@@ -15,10 +15,10 @@ params = pika.URLParameters(os.environ.get('RABBITMQ_URL'))
 
 
 def connect_consumer():
-    '''
+    """
         Connect to RabbitMQ Queue and get message from producers 
         for saving user information from other apps
-    '''
+    """
     # Establish connection
     try:
         connection = pika.BlockingConnection(params)
@@ -26,6 +26,16 @@ def connect_consumer():
         channel.queue_declare(queue='send_data_flasks')
 
         def callback(ch, method, properties, body):
+            """Responsible for getting properties type and
+                json data from producer and execute it in current consumer. 
+
+            Args:
+                ch (Parameter): Not used but needed.
+                method (Parameter): Not used but needed.
+                properties (Parameter): for getting properties type so can execute.
+                specific task needed from producer to consumer.
+                body (Parameter): json data from the producer.
+            """
             try:
                 print("message receiving....")
                 if properties.type == 'user_is_created':
