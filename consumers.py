@@ -8,7 +8,7 @@ import os
 import pika
 from pika.exceptions import AMQPConnectionError
 from bson import ObjectId
-from api import user, text2image
+from api import user, text2image, cache
 from delete_images.delete import delete_data_from_media_container
 
 # RabbitMQ connection parameters
@@ -57,6 +57,7 @@ def connect_consumer():
                             image_name_joined = "_".join(image_name)
                             delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}.png")
                             text2image.delete_one({'_id': ObjectId(str(ids))})
+                            cache.delete(f"text2image_all_data_{image['user_id']}")
                             print("Image deleted successfully")
                     except Exception as e:
                         print(f"Something is wrong: {e}")
