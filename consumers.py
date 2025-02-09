@@ -55,7 +55,7 @@ def connect_consumer():
                             image = text2image.find_one({'_id': ObjectId(str(ids))})
                             image_name = str(image['image_name']).split()
                             image_name_joined = "_".join(image_name)
-                            delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}.png")
+                            delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}_{ids}.png")
                             text2image.delete_one({'_id': ObjectId(str(ids))})
                             cache.delete(f"text2image_all_data_{image['user_id']}")
                             print("Image deleted successfully")

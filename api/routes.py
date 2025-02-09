@@ -149,7 +149,7 @@ def delete_single_generated_images(ids, payload):
         image = text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': uuid.UUID(payload['user_id'])})
         image_name = str(image['image_name']).split()
         image_name_joined = "_".join(image_name)
-        delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}.png")
+        delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}_{ids}.png")
         text2image.delete_one({'_id': ObjectId(str(ids))})
         cache.delete(f"text2image_all_data_{payload['user_id']}_{ids}")
         cache.delete(f"text2image_all_data_{payload['user_id']}")
