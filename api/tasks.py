@@ -54,7 +54,7 @@ def generate(self, text, payload):
         cache.delete(f"text2image_all_data_{payload['user_id']}")
         inserted_id = data.inserted_id
         data_inserted = text2image.find_one({"_id": inserted_id})
-        path = os.path.join('/vol/images/', f"result_txt_2_img_{'_'.join(text_splited)}.png")
+        path = os.path.join('/vol/images/', f"result_txt_2_img_{'_'.join(text_splited)}_{inserted_id}.png")
         self.update_state(state='RUNNING', meta={'current': 4, 'total': 5})
         time.sleep(5)
         image.save(path)
