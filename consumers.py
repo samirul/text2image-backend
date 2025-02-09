@@ -9,6 +9,7 @@ import pika
 from pika.exceptions import AMQPConnectionError
 from bson import ObjectId
 from api import user, text2image
+from delete_images.delete import delete_data_from_media_container
 
 # RabbitMQ connection parameters
 params = pika.URLParameters(os.environ.get('RABBITMQ_URL'))
@@ -51,6 +52,10 @@ def connect_consumer():
                         if text2image.find_one({'_id': ObjectId(str(ids))}) is None:
                             print(f"Images {ids} is not found or successfully deleted from admin panel.")
                         else:
+                            image = text2image.find_one({'_id': ObjectId(str(ids))})
+                            image_name = str(image['image_name']).split()
+                            image_name_joined = "_".join(image_name)
+                            delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}.png")
                             text2image.delete_one({'_id': ObjectId(str(ids))})
                             print("Image deleted successfully")
                     except Exception as e:

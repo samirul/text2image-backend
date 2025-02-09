@@ -96,6 +96,8 @@ services:
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && python3 consumers.py"
+    volumes:
+      - images:/vol/images/
     deploy:
       resources:
           limits:
