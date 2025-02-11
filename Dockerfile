@@ -1,7 +1,6 @@
 FROM python:3.12.3-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-EXPOSE 5010
 ENV HF_HOME='/vol/model/text2image-model'
 WORKDIR /text2image-app
 COPY requirements.txt /text2image-app/
