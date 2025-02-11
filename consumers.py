@@ -16,9 +16,10 @@ params = pika.URLParameters(os.environ.get('RABBITMQ_URL'))
 
 
 def connect_consumer():
-    """
-        Connect to RabbitMQ Queue and get message from producers 
-        for saving user information from other apps
+    """This function will Connect to the RabbitMQ Queue
+        and then will get messages from the youtools
+        producer. Tasks will get executed based on events
+        and result will save on the mongoDB database.
     """
     # Establish connection
     try:
