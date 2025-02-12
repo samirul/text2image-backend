@@ -111,6 +111,7 @@ services:
     container_name: celery-text2image
     image: text2image-image
     command: bash -c "source /virtual-py/bin/activate && celery -A api.celery_app worker --loglevel=info --concurrency=$(nproc)"
+    restart: always
     volumes:
       - images:/vol/images/
       - text2image-ai-model:/vol/model/
