@@ -15,4 +15,6 @@ RUN python -m venv /virtual-py && \
     chown -R text2image-user:text2image-user /vol && \
     chmod -R 755 /vol
 
+ENV PATH="/scripts:/virtual-py/bin:$PATH"
+
 USER text2image-user
