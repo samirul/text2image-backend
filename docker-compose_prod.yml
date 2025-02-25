@@ -92,7 +92,7 @@ services:
     
   consumers-text2image:
     container_name: consumers-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && python3 consumers.py"
@@ -109,12 +109,14 @@ services:
 
   celery-text2image:
     container_name: celery-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     command: bash -c "source /virtual-py/bin/activate && celery -A api.celery_app worker --loglevel=info --concurrency=$(nproc)"
     restart: always
     volumes:
       - images:/vol/images/
       - text2image-ai-model:/vol/model/
+    env_file:
+      - ".env"
     environment:
       - CELERY_BROKER=${CELERY_BROKER}
       - CELERY_BACKEND=${CELERY_BACKEND}
@@ -136,7 +138,7 @@ services:
 
   gunicorn-5011-text2image:
     container_name: gunicorn-5011-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5011:5011
@@ -158,7 +160,7 @@ services:
 
   gunicorn-5012-text2image:
     container_name: gunicorn-5012-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5012:5012
@@ -180,7 +182,7 @@ services:
 
   gunicorn-5013-text2image:
     container_name: gunicorn-5013-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5013:5013
@@ -202,7 +204,7 @@ services:
 
   gunicorn-5014-text2image:
     container_name: gunicorn-5014-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5014:5014
@@ -223,8 +225,7 @@ services:
         condition: service_healthy
 
   nginx-text2image:
-    build:
-        context: ./nginx
+    image: samirul08/text2image-backend-nginx-text2image
     restart: always
     deploy:
       resources:

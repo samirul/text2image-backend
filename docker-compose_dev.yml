@@ -133,6 +133,8 @@ services:
     volumes:
       - images:/vol/images/
       - text2image-ai-model:/vol/model/
+    env_file:
+      - ".env"
     environment:
       - CELERY_BROKER=${CELERY_BROKER}
       - CELERY_BACKEND=${CELERY_BACKEND}
