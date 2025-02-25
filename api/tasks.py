@@ -32,7 +32,8 @@ def generate(self, text, payload):
     try:
         self.update_state(state='PENDING', meta={'current': 0, 'total': 0})
         model = "sd-legacy/stable-diffusion-v1-5"
-        pipe = StableDiffusionPipeline.from_pretrained(model, torch_dtype=torch.float16)
+        pipe = StableDiffusionPipeline.from_pretrained(model, cache_dir='/vol/model/text2image-model/',
+        torch_dtype=torch.float16)
         trained_on = pipe.to("cuda")
         pipe.enable_model_cpu_offload()
         self.update_state(state='RUNNING', meta={'current': 1, 'total': 5})
