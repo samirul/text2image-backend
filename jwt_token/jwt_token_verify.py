@@ -1,6 +1,5 @@
 """
-    Function for checking jwt access token so user who logged in can access information.
-
+    Function decorator for checking jwt access token so user who logged in can access information.
 """
 
 import os

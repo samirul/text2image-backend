@@ -89,47 +89,29 @@ services:
     volumes:
       - redisinsight_data_text2image:/db
 
-
-  text2image-project:
-    container_name: text2image-project
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: text2image-image
-    ports:
-      - "5010:5010"
+    
+  consumers-text2image:
+    container_name: consumers-text2image
+    image: samirul08/text2image-image
     env_file:
       - ".env"
+    command: bash -c "source /virtual-py/bin/activate && python3 consumers.py"
     volumes:
-      - .:/text2image-app
-      - ./images:/text2image-app/images/
-    command: bash -c "source /virtual-py/bin/activate && python3 -m pytest -s -v && python3 run.py"
-    networks:
-      - text2image_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5010/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-    depends_on:
-      mongoDB-text2image:
-        condition: service_healthy
-      redis-text2image:
-        condition: service_started
+      - images:/vol/images/
     deploy:
       resources:
-        limits:
-          cpus: "4.0"
-          memory: 4124M
-        reservations:
-          devices:
-            - capabilities: [gpu]
+          limits:
+            cpus: "1.0"
+            memory: 200M
+    networks:
+      - text2image_network
+    restart: always
 
   celery-text2image:
     container_name: celery-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     command: bash -c "source /virtual-py/bin/activate && celery -A api.celery_app worker --loglevel=info --concurrency=$(nproc)"
+    restart: always
     volumes:
       - images:/vol/images/
       - text2image-ai-model:/vol/model/
@@ -145,8 +127,6 @@ services:
         condition: service_healthy
       redis-text2image:
         condition: service_started
-      text2image-project:
-        condition: service_started
     deploy:
       resources:
         limits:
@@ -158,10 +138,12 @@ services:
 
   gunicorn-5011-text2image:
     container_name: gunicorn-5011-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5011:5011
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5011 run:app"
@@ -175,15 +157,15 @@ services:
     depends_on:
       mongoDB-text2image:
         condition: service_healthy
-      text2image-project:
-        condition: service_healthy
 
   gunicorn-5012-text2image:
     container_name: gunicorn-5012-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5012:5012
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5012 run:app"
@@ -197,15 +179,15 @@ services:
     depends_on:
       mongoDB-text2image:
         condition: service_healthy
-      text2image-project:
-        condition: service_healthy
 
   gunicorn-5013-text2image:
     container_name: gunicorn-5013-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5013:5013
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5013 run:app"
@@ -219,15 +201,15 @@ services:
     depends_on:
       mongoDB-text2image:
         condition: service_healthy
-      text2image-project:
-        condition: service_healthy
 
   gunicorn-5014-text2image:
     container_name: gunicorn-5014-text2image
-    image: text2image-image
+    image: samirul08/text2image-image
     restart: always
     ports:
       - 5014:5014
+    volumes:
+      - images:/vol/images/
     env_file:
       - ".env"
     command: bash -c "source /virtual-py/bin/activate && gunicorn --bind 0.0.0.0:5014 run:app"
@@ -241,12 +223,9 @@ services:
     depends_on:
       mongoDB-text2image:
         condition: service_healthy
-      text2image-project:
-        condition: service_healthy
 
   nginx-text2image:
-    build:
-      context: ./nginx
+    image: samirul08/text2image-backend-nginx-text2image
     restart: always
     deploy:
       resources:

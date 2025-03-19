@@ -10,6 +10,7 @@ from bson.objectid import ObjectId
 from jwt_token.jwt_token_verify import jwt_login_required
 from api import app, text2image, tasks, cache
 from api.producers import publish
+from delete_images.delete import delete_data_from_media_container
 
 
 @app.route("/generate-image/", methods=['POST'])
@@ -42,7 +43,7 @@ def post_generate_image(payload):
 @app.route("/all-images/", methods=['GET'])
 @jwt_login_required
 def get_generated_images(payload):
-    """Getting list of all images from MongoDB database
+    """Getting list of all images from MongoDB database.
 
     Args:
         payload (UUID): Get user_id from payload after authentication.
@@ -86,10 +87,10 @@ def get_generated_images(payload):
 @app.route("/image/<ids>/", methods=['GET'])
 @jwt_login_required
 def get_single_generated_images(ids, payload):
-    """Getting single image from MongoDB database by image id
+    """Getting single image from MongoDB database by image id.
 
     Args:
-        ids (Object_id): Getting image id
+        ids (Object_id): Getting image id.
         payload (UUID): Get user_id from payload after authentication.
 
     Returns:
@@ -130,10 +131,10 @@ def get_single_generated_images(ids, payload):
 @app.route("/image/delete/<ids>/", methods=['DELETE'])
 @jwt_login_required
 def delete_single_generated_images(ids, payload):
-    """Delete single generated image by image id
+    """Delete single generated image by image id.
 
     Args:
-        ids (Object_id): Getting image id
+        ids (Object_id): Getting image id.
         payload (UUID): Get user_id from payload after authentication.
 
     Returns:
@@ -145,8 +146,13 @@ def delete_single_generated_images(ids, payload):
         if text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': uuid.UUID(payload['user_id'])}) is None:
             response_data = json.dumps({"msg": f"Data {ids} is not found."}, indent=4)
             return Response(response_data, status=404, mimetype='application/json')
+        image = text2image.find_one({'_id': ObjectId(str(ids)), 'user_id': uuid.UUID(payload['user_id'])})
+        image_name = str(image['image_name']).split()
+        image_name_joined = "_".join(image_name)
+        delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}_{ids}.png")
         text2image.delete_one({'_id': ObjectId(str(ids))})
         cache.delete(f"text2image_all_data_{payload['user_id']}_{ids}")
+        cache.delete(f"text2image_all_data_{payload['user_id']}")
         publish("image_data_Delete_from_flask", ids)
         return Response({}, status=204, mimetype='application/json')
     except Exception as e:
@@ -158,6 +164,15 @@ def delete_single_generated_images(ids, payload):
 @app.route("/task_status/<task_id>/", methods=['GET'])
 @jwt_login_required
 def task_status(payload, task_id):
+    """For sending task result to the frontend.
+
+    Args:
+        payload (Parameter): Celery payload.
+        task_id (Parameter): Celery task id.
+
+    Returns:
+        Json: Send celery json task responses based on celery task id.
+    """
     task = tasks.generate.AsyncResult(task_id)
     if task.state == 'PENDING':
         response = {
@@ -198,4 +213,9 @@ def task_status(payload, task_id):
     
 @app.route("/health", methods=['GET'])
 def health():
+    """Health check.
+
+    Returns:
+        String: Checking health.
+    """
     return jsonify("Running")

@@ -1,3 +1,4 @@
+"""Running flask app."""
 from api import app, db
 
 if __name__ == '__main__':

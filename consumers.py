@@ -1,31 +1,43 @@
 
-'''
+"""
     Function for Saving user information in MongoDB using RabbitMq
-'''
+"""
 
 import json
 import os
 import pika
 from pika.exceptions import AMQPConnectionError
 from bson import ObjectId
-from api import user, text2image
+from api import user, text2image, cache
+from delete_images.delete import delete_data_from_media_container
 
 # RabbitMQ connection parameters
 params = pika.URLParameters(os.environ.get('RABBITMQ_URL'))
 
 
 def connect_consumer():
-    '''
-        Connect to RabbitMQ Queue and get message from producers 
-        for saving user information from other apps
-    '''
+    """This function will Connect to the RabbitMQ Queue
+        and then will get messages from the youtools
+        producer. Tasks will get executed based on events
+        and result will save on the mongoDB database.
+    """
     # Establish connection
     try:
         connection = pika.BlockingConnection(params)
         channel = connection.channel()
-        channel.queue_declare(queue='send_data_flasks')
+        channel.queue_declare(queue='send_data_text2image')
 
         def callback(ch, method, properties, body):
+            """Responsible for getting properties type and
+                json data from producer and execute it in current consumer. 
+
+            Args:
+                ch (Parameter): Not used but needed.
+                method (Parameter): Not used but needed.
+                properties (Parameter): for getting properties type so can execute.
+                specific task needed from producer to consumer.
+                body (Parameter): json data from the producer.
+            """
             try:
                 print("message receiving....")
                 if properties.type == 'user_is_created':
@@ -41,7 +53,12 @@ def connect_consumer():
                         if text2image.find_one({'_id': ObjectId(str(ids))}) is None:
                             print(f"Images {ids} is not found or successfully deleted from admin panel.")
                         else:
+                            image = text2image.find_one({'_id': ObjectId(str(ids))})
+                            image_name = str(image['image_name']).split()
+                            image_name_joined = "_".join(image_name)
+                            delete_data_from_media_container(f"/vol/images/result_txt_2_img_{image_name_joined}_{ids}.png")
                             text2image.delete_one({'_id': ObjectId(str(ids))})
+                            cache.delete(f"text2image_all_data_{image['user_id']}")
                             print("Image deleted successfully")
                     except Exception as e:
                         print(f"Something is wrong: {e}")
@@ -52,7 +69,7 @@ def connect_consumer():
                 print(f"Error processing message: {e}")
 
         # Start consuming messages from 'django_app' queue
-        channel.basic_consume(queue='send_data_flasks', on_message_callback=callback, auto_ack=True)
+        channel.basic_consume(queue='send_data_text2image', on_message_callback=callback, auto_ack=True)
         print('Waiting for messages....')
         channel.start_consuming()
 
